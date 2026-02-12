@@ -1,0 +1,9 @@
+courseid,name,description
+CSE101,Introduction to Programming,Basics of programming using Python
+CSE102,Data Structures,Stacks queues linked lists
+CSE201,Database Systems,SQL and relational databases
+CSE202,Operating Systems,Processes memory scheduling
+CSE203,Computer Networks,OSI TCP IP model
+ML301,Machine Learning,Supervised and unsupervised learning
+DS301,Data Science,Data analysis statistics visualization
+WD101,Web Development,HTML CSS JavaScript React
