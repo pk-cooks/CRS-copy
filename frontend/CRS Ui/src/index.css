@@ -108,6 +108,19 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
+
+  .nav-link-gradient {
+    color: #000;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .nav-link-gradient:hover {
+    background: linear-gradient(135deg, #A716A7, #7B61FF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
 
 @keyframes float {

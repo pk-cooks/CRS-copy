@@ -13,7 +13,7 @@ import { addCourseToHistory } from "@/lib/courseHistory";
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Overview", id: "overview" },
   { icon: BookOpen, label: "My Courses", id: "courses" },
-  { icon: Clock, label: "History", id: "history" },
+  { icon: Clock, label: "History", id: "history" }
 ];
 
 const userSkills = [
@@ -83,11 +83,10 @@ const DashboardPage = () => {
             <button
               key={item.id}
               onClick={() => handleSidebarClick(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                activeSection === item.id
-                  ? "gradient-bg text-primary-foreground shadow-hero"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              }`}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${activeSection === item.id
+                ? "gradient-bg text-primary-foreground shadow-hero"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                }`}
             >
               <item.icon className="h-4 w-4" />
               {item.label}
@@ -116,14 +115,15 @@ const DashboardPage = () => {
         <div className="mb-10 animate-fade-in">
           <div className="flex items-center gap-3 mb-1">
             <button
-              onClick={() => navigate("/my-courses")}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => navigate(-1)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+              title="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <h1 className="font-display text-3xl font-bold text-foreground">Welcome back, Praveen</h1>
           </div>
-          <p className="text-muted-foreground ml-8">Your personalized learning space</p>
+          <p className="text-muted-foreground ml-11">Your personalized learning space</p>
         </div>
 
         {/* Section 1: Skill Profile */}
@@ -164,16 +164,15 @@ const DashboardPage = () => {
               {careerPaths.map((role) => (
                 <div
                   key={role.title}
-                  className={`rounded-2xl p-5 border transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover ${
-                    role.accent
-                      ? "border-primary/20 bg-accent/30"
-                      : "border-border bg-background"
-                  }`}
+                  className={`rounded-2xl p-5 border transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover ${role.accent
+                    ? "border-primary/20 bg-accent/30"
+                    : "border-border bg-background"
+                    }`}
                 >
                   <h3 className="font-display font-semibold text-foreground mb-1">{role.title}</h3>
                   <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{role.description}</p>
                   <button className="text-sm text-primary font-medium hover:underline flex items-center gap-1">
-                  
+
                   </button>
                 </div>
               ))}
@@ -194,7 +193,7 @@ const DashboardPage = () => {
                 className="bg-card rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1 p-5 relative animate-fade-in"
                 style={{ animationDelay: `${(i + 4) * 80}ms`, opacity: 0 }}
               >
-                <FavoriteHeart courseId={course.id} />
+
                 <h3 className="font-display text-base font-semibold text-foreground mb-1 leading-snug">{course.title}</h3>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-xs text-muted-foreground">{course.platform}</span>

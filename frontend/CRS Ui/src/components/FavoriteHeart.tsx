@@ -1,25 +1,50 @@
 import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import { addFavorite, removeFavorite, isFavorite } from "@/lib/favorites";
+import { useUser } from "@/context/UserContext";
+import { userService } from "@/services/userService";
 
 interface FavoriteHeartProps {
   courseId: number;
+  courseTitle?: string;
+  coursePlatform?: string;
 }
 
-const FavoriteHeart = ({ courseId }: FavoriteHeartProps) => {
+const FavoriteHeart = ({ courseId, courseTitle, coursePlatform }: FavoriteHeartProps) => {
   const [favorited, setFavorited] = useState(false);
+  const { user } = useUser();
 
   useEffect(() => {
     setFavorited(isFavorite(courseId));
   }, [courseId]);
 
-  const toggleFavorite = (e: React.MouseEvent) => {
+  const toggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
     if (favorited) {
       removeFavorite(courseId);
+      if (user?.uid && courseTitle && coursePlatform) {
+        try {
+          await userService.removeCourseFromProfile(user.uid, {
+            name: courseTitle,
+            platform: coursePlatform,
+          });
+        } catch (err) {
+          console.warn("Could not remove course from Firestore:", err);
+        }
+      }
     } else {
       addFavorite(courseId);
+      if (user?.uid && courseTitle && coursePlatform) {
+        try {
+          await userService.addCourseToProfile(user.uid, {
+            name: courseTitle,
+            platform: coursePlatform,
+          });
+        } catch (err) {
+          console.warn("Could not save course to Firestore:", err);
+        }
+      }
     }
 
     setFavorited(!favorited);
@@ -40,14 +65,14 @@ const FavoriteHeart = ({ courseId }: FavoriteHeartProps) => {
         style={
           favorited
             ? {
-                fill: "url(#heart-gradient)",
-                stroke: "url(#heart-gradient)",
-                transform: "scale(1.1)",
-              }
+              fill: "url(#heart-gradient)",
+              stroke: "url(#heart-gradient)",
+              transform: "scale(1.1)",
+            }
             : {
-                fill: "none",
-                stroke: "#9CA3AF",
-              }
+              fill: "none",
+              stroke: "#9CA3AF",
+            }
         }
       />
       <svg width="0" height="0" className="absolute">

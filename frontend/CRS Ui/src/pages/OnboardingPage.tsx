@@ -5,8 +5,9 @@ import { ArrowRight, ArrowLeft, GraduationCap, Heart, BarChart3, Check, Plus } f
 import { useUser } from "@/context/UserContext";
 import * as api from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { userService } from "@/services/userService";
 
-const educationLevels = ["High School", "Undergraduate", "Graduate"];
+const educationLevels = ["High School", "Undergraduate", "Post Graduate"];
 const interestAreas = [
   "Web Development", "Data Science", "Machine Learning", "Mobile Apps",
   "Cloud Computing", "Cybersecurity", "Python", "JavaScript",
@@ -62,6 +63,10 @@ const OnboardingPage = () => {
     if (step === 0 && education) {
       try {
         await api.setEducationLevel(user.userid, education);
+        // Also save to Firestore
+        if (user.uid) {
+          await userService.updateUserProfile(user.uid, { educationLevel: education });
+        }
       } catch (err) {
         console.error("Failed to save education level:", err);
         toast({
@@ -76,17 +81,27 @@ const OnboardingPage = () => {
       return;
     }
 
-    // Final step – save interests, then navigate
+    // Final step – save interests, skill level, and mark onboarding done
     setSubmitting(true);
     try {
       await api.setInterest(user.userid, interests);
       updateInterests(interests);
+
+      // Save all onboarding data to Firestore
+      if (user.uid) {
+        await userService.updateUserProfile(user.uid, {
+          interests,
+          skillLevel: skill,
+          hasFinishedOnboarding: true,
+        });
+      }
+
       navigate("/loading");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to save interests:", err);
       toast({
         title: "Error",
-        description: "Could not save your interests. Please try again.",
+        description: err.message || "Could not save your interests. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -107,10 +122,10 @@ const OnboardingPage = () => {
             <div key={s.label} className="flex items-center gap-2">
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${i < step
-                    ? "gradient-bg text-primary-foreground"
-                    : i === step
-                      ? "gradient-bg text-primary-foreground shadow-hero"
-                      : "bg-muted text-muted-foreground"
+                  ? "gradient-bg text-primary-foreground"
+                  : i === step
+                    ? "gradient-bg text-primary-foreground shadow-hero"
+                    : "bg-muted text-muted-foreground"
                   }`}
               >
                 {i < step ? <Check className="h-4 w-4" /> : <s.icon className="h-4 w-4" />}
@@ -134,8 +149,8 @@ const OnboardingPage = () => {
                     key={level}
                     onClick={() => setEducation(level)}
                     className={`rounded-xl px-4 py-4 text-sm font-medium border transition-all duration-200 ${education === level
-                        ? "gradient-bg text-primary-foreground border-transparent shadow-hero"
-                        : "bg-background border-border text-foreground hover:border-primary/30 hover:bg-accent"
+                      ? "gradient-bg text-primary-foreground border-transparent shadow-hero"
+                      : "bg-background border-border text-foreground hover:border-primary/30 hover:bg-accent"
                       }`}
                   >
                     {level}
@@ -155,8 +170,8 @@ const OnboardingPage = () => {
                     key={item}
                     onClick={() => toggleInterest(item)}
                     className={`rounded-full px-4 py-2 text-sm font-medium border transition-all duration-200 ${interests.includes(item)
-                        ? "gradient-bg text-primary-foreground border-transparent"
-                        : "bg-background border-border text-foreground hover:border-primary/30 hover:bg-accent"
+                      ? "gradient-bg text-primary-foreground border-transparent"
+                      : "bg-background border-border text-foreground hover:border-primary/30 hover:bg-accent"
                       }`}
                   >
                     {item === "Project Management" ? (
@@ -203,8 +218,8 @@ const OnboardingPage = () => {
                     key={level}
                     onClick={() => setSkill(level)}
                     className={`rounded-xl px-6 py-5 text-left border transition-all duration-200 ${skill === level
-                        ? "gradient-bg text-primary-foreground border-transparent shadow-hero"
-                        : "bg-background border-border text-foreground hover:border-primary/30 hover:bg-accent"
+                      ? "gradient-bg text-primary-foreground border-transparent shadow-hero"
+                      : "bg-background border-border text-foreground hover:border-primary/30 hover:bg-accent"
                       }`}
                   >
                     <span className="font-medium">{level}</span>

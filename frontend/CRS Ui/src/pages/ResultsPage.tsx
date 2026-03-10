@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Star, ExternalLink, Sparkles, Award } from "lucide-react";
+import { ArrowLeft, Star, ExternalLink, Sparkles, Award, ChevronLeft, ChevronRight } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import type { NormalizedCourse } from "@/hooks/useRecommendations";
@@ -37,15 +37,15 @@ const ResultsPage = () => {
           <div className="flex items-center gap-6">
             <button
               onClick={() => navigate("/my-courses")}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm nav-link-gradient"
             >
-              HOME
+              My Courses
             </button>
             <button
               onClick={() => navigate("/dashboard")}
               className="w-9 h-9 rounded-full gradient-bg flex items-center justify-center text-primary-foreground font-display font-bold text-sm hover:scale-105 transition-transform"
             >
-              P
+              {user?.name?.charAt(0)?.toUpperCase() || "?"}
             </button>
           </div>
         </div>
@@ -54,9 +54,28 @@ const ResultsPage = () => {
       {/* Header */}
       <div className="gradient-bg">
         <div className="container mx-auto max-w-5xl px-6 py-12">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center left-6 gap-3 mb-2">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => navigate(-1)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-all"
+                title="Go back"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => navigate(1)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-all"
+                title="Go forward"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+
             <Sparkles className="h-6 w-6 text-primary-foreground" />
-            <h1 className="font-display text-3xl font-bold text-primary-foreground">Your Recommendations</h1>
+            <h1 className="font-display text-3xl font-bold text-primary-foreground">
+              Your Recommendations
+            </h1>
           </div>
           <p className="text-primary-foreground/70 text-lg">
             {loading

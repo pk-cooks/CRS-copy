@@ -8,6 +8,8 @@ import {
   Play,
   Award,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useUser } from "@/context/UserContext";
@@ -16,7 +18,10 @@ import type { NormalizedCourse } from "@/hooks/useRecommendations";
 import { getPlatformLogo } from "@/components/PlatformLogos";
 import { addMyCourse } from "@/lib/myCourses";
 import { addFavorite, removeFavorite, isFavorite } from "@/lib/favorites";
+import { userService } from "@/services/userService";
 import { Heart } from "lucide-react";
+import { addCourseToHistory } from "@/lib/courseHistory";
+
 
 const levelColor = (level: string) => {
   switch (level) {
@@ -86,20 +91,42 @@ const CourseDetailPage = () => {
   ];
 
   const careerRoles =
-    course.skills.length > 0
+    course?.skills?.length
       ? course.skills.slice(0, 5).map((s) => `${s} Specialist`)
       : defaultRoles;
 
   const handlePlay = () => {
-    addMyCourse(course);
+    addCourseToHistory(course);
     window.open(course.url, "_blank");
   };
 
-  const toggleFavorite = () => {
+  const toggleFavorite = async () => {
     if (favorited) {
       removeFavorite(course.id);
+      // Also remove from Firestore
+      if (user?.uid) {
+        try {
+          await userService.removeCourseFromProfile(user.uid, {
+            name: course.title,
+            platform: course.platform,
+          });
+        } catch (e) {
+          console.warn("Could not remove course from Firestore:", e);
+        }
+      }
     } else {
       addFavorite(course.id);
+      // Also save to Firestore
+      if (user?.uid) {
+        try {
+          await userService.addCourseToProfile(user.uid, {
+            name: course.title,
+            platform: course.platform,
+          });
+        } catch (e) {
+          console.warn("Could not save course to Firestore:", e);
+        }
+      }
     }
     setFavorited(!favorited);
   };
@@ -107,13 +134,22 @@ const CourseDetailPage = () => {
   return (
     <div className="min-h-screen bg-background pb-16 animate-fade-in">
       <div className="container mx-auto max-w-6xl px-6 pt-8">
-        <Button
-          variant="ghost"
-          className="text-muted-foreground hover:text-foreground mb-6"
-          onClick={() => navigate("/my-courses")}
-        >
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back 
-        </Button>
+        <div className="flex items-center gap-1 mb-6">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+            title="Go back"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => navigate(1)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+            title="Go forward"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
 
         <div className="grid lg:grid-cols-2 gap-10 mb-12">
           {/* LEFT */}
@@ -149,31 +185,29 @@ const CourseDetailPage = () => {
 
             {/* FAVORITE BUTTON */}
             <div className="mt-3 w-fit">
-            <div
-              className={`p-[1px] rounded-lg ${
-                favorited ? "bg-gradient-to-r from-[#A716A7] to-[#7B61FF]" : "bg-border"
-              }`}
-            >
-              <button
-                onClick={toggleFavorite}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-white transition-all duration-200"
+              <div
+                className={`p-[1px] rounded-lg ${favorited ? "bg-gradient-to-r from-[#A716A7] to-[#7B61FF]" : "bg-border"
+                  }`}
               >
-                <Heart
-                  size={16}
-                  className={`transition-all duration-200 ${
-                    favorited
+                <button
+                  onClick={toggleFavorite}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-white transition-all duration-200"
+                >
+                  <Heart
+                    size={16}
+                    className={`transition-all duration-200 ${favorited
                       ? "fill-primary text-primary"
                       : "text-muted-foreground"
-                  }`}
-                />
+                      }`}
+                  />
 
-                <span className={favorited ? "text-primary" : "text-foreground"}>
-                  {favorited ? "Saved" : "Add to Favorites"}
-                </span>
-              </button>
+                  <span className={favorited ? "text-primary" : "text-foreground"}>
+                    {favorited ? "Saved" : "Add to My Courses"}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
 
           {/* RIGHT */}
@@ -223,11 +257,11 @@ const CourseDetailPage = () => {
           <p className="text-muted-foreground leading-relaxed">{course.description}</p>
         </div>
 
-        {course.skills.length > 0 && (
+        {course?.skills?.length > 0 && (
           <div className="bg-card rounded-2xl shadow-card p-6 mb-6 border border-border">
             <h3 className="font-display text-lg font-semibold text-foreground mb-4">Skills You'll Gain</h3>
             <div className="flex flex-wrap gap-2">
-              {course.skills.map((skill) => (
+              {course.skills?.map((skill) => (
                 <span
                   key={skill}
                   className="px-3 py-1.5 rounded-full text-sm font-medium bg-accent text-accent-foreground border border-primary/10"

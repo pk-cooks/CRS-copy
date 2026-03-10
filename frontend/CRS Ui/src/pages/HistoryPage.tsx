@@ -1,27 +1,28 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Star, ExternalLink, Sparkles, Trash2, Clock } from "lucide-react";
+import { Star, ExternalLink, Sparkles, Trash2, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { allCourses, levelColor } from "@/data/courses";
 import { getCourseHistory, clearCourseHistory, addCourseToHistory } from "@/lib/courseHistory";
 import FavoriteHeart from "@/components/FavoriteHeart";
+import { useUser } from "@/context/UserContext";
+
 
 const HistoryPage = () => {
   const navigate = useNavigate();
-  const [history, setHistory] = useState(getCourseHistory());
+  const { user } = useUser();
+  const [history, setHistory] = useState<any[]>(getCourseHistory());
 
   const handleClear = () => {
     clearCourseHistory();
     setHistory([]);
   };
 
-  const handleRevisit = (courseId: number) => {
-    const course = allCourses.find((c) => c.id === courseId);
-    if (course) {
-      addCourseToHistory(course);
-      if (course.url) {
-        window.open(course.url, "_blank");
-      }
+  const handleRevisit = (course: any) => {
+    addCourseToHistory(course);
+
+    if (course.url) {
+      window.open(course.url, "_blank");
     }
   };
 
@@ -51,15 +52,15 @@ const HistoryPage = () => {
           <div className="flex items-center gap-6">
             <button
               onClick={() => navigate("/my-courses")}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm nav-link-gradient"
             >
-              HOME
+              My Courses
             </button>
             <button
               onClick={() => navigate("/dashboard")}
               className="w-9 h-9 rounded-full gradient-bg flex items-center justify-center text-primary-foreground font-display font-bold text-sm hover:scale-105 transition-transform"
             >
-              P
+              {user?.name?.charAt(0)?.toUpperCase() || "?"}
             </button>
           </div>
         </div>
@@ -68,6 +69,22 @@ const HistoryPage = () => {
       <div className="container mx-auto max-w-5xl px-6 pt-10">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => navigate(-1)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+                title="Go back"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => navigate(1)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+                title="Go forward"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
             <Clock className="h-6 w-6 text-primary" />
             <h1 className="font-display text-3xl font-bold text-foreground">Recently Viewed Courses</h1>
           </div>
@@ -93,7 +110,7 @@ const HistoryPage = () => {
         ) : (
           <div className="grid md:grid-cols-3 gap-5">
             {history.map((entry, i) => {
-              const course = allCourses.find((c) => c.id === entry.id);
+              const course = entry;
               if (!course) return null;
               return (
                 <div
@@ -101,7 +118,7 @@ const HistoryPage = () => {
                   className="bg-card rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1 p-6 relative animate-fade-in"
                   style={{ animationDelay: `${i * 80}ms`, opacity: 0 }}
                 >
-                  <FavoriteHeart courseId={course.id} />
+                  <FavoriteHeart courseId={course.id} courseTitle={course.title} coursePlatform={course.platform} />
                   <h3 className="font-display text-lg font-semibold text-foreground mb-1">{course.title}</h3>
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-sm text-muted-foreground">{course.platform}</span>
@@ -116,9 +133,9 @@ const HistoryPage = () => {
                       variant="ghost"
                       size="sm"
                       className="text-primary hover:text-primary"
-                      onClick={() => handleRevisit(course.id)}
+                      onClick={() => navigate(`/course/${course.id}`)}
                     >
-                      Revisit <ExternalLink className="ml-1 h-3 w-3" />
+                      View <ExternalLink className="ml-1 h-3 w-3" />
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground border-t border-border pt-3">

@@ -23,8 +23,21 @@ courses = pd.DataFrame()
 
 try:
     course_file = os.path.join(DATA_DIR, "course.csv")
+
     if os.path.isfile(course_file):
         courses = pd.read_csv(course_file)
+
+    # remove hidden spaces in column names
+        courses.columns = courses.columns.str.strip()
+
+        print("DATASET COLUMNS:", courses.columns)
+
+        # Rename difficulty column
+        if "lvl of diff" in courses.columns:
+            courses = courses.rename(columns={
+                "lvl of diff": "level"
+            })
+
 except Exception as e:
     print(f"Warning: Could not load courses data: {e}")
 
@@ -117,7 +130,15 @@ def root():
 def get_courses():
     if courses.empty:
         return []
-    return courses.to_dict(orient="records")
+
+    df = courses.copy()
+
+    if "lvl of diff" in df.columns:
+        df["level"] = df["lvl of diff"]
+    else:
+        df["level"] = "Unknown"
+
+    return df.to_dict(orient="records")
 
 
 @app.get("/recommend")
@@ -138,11 +159,14 @@ def recommend_courses(userid: int | None = None):
             return {"error": "Invalid interests format"}
         if courses.empty:
             return []
-        filtered = courses[courses["Sub-Category"].isin(interested_fields)]
+        filtered = courses[courses["Sub-Category"].str.contains('|'.join(interested_fields), case=False, na=False)]
         if filtered.empty:
             return []
         filtered = filtered.sort_values(by="Rating", ascending=False)
-        return filtered.head(12).to_dict(orient="records")
+        filtered = filtered.head(12).copy()
+        filtered["level"] = filtered.get("lvl of diff", "Unknown")
+
+        return filtered.to_dict(orient="records")
     except Exception as e:
         import traceback
         traceback.print_exc()
