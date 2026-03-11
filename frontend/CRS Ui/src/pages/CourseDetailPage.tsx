@@ -10,6 +10,7 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
 } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useUser } from "@/context/UserContext";
@@ -18,6 +19,9 @@ import type { NormalizedCourse } from "@/hooks/useRecommendations";
 import { getPlatformLogo } from "@/components/PlatformLogos";
 import { addMyCourse } from "@/lib/myCourses";
 import { addFavorite, removeFavorite, isFavorite } from "@/lib/favorites";
+import { markCompleted, unmarkCompleted, isCompleted } from "@/lib/completedCourses";
+import { addLearnedSkill, removeLearnedSkill } from "@/lib/learnedSkills";
+import { addLearnedCareer, removeLearnedCareer, deriveCareer } from "@/lib/learnedCareers";
 import { userService } from "@/services/userService";
 import { Heart } from "lucide-react";
 import { addCourseToHistory } from "@/lib/courseHistory";
@@ -43,6 +47,7 @@ const CourseDetailPage = () => {
   const { courses, loading } = useRecommendations(user?.userid ?? null);
 
   const [favorited, setFavorited] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
   const course: NormalizedCourse | undefined = courses.find(
     (c) => c.id === Number(id)
@@ -51,6 +56,7 @@ const CourseDetailPage = () => {
   useEffect(() => {
     if (course) {
       setFavorited(isFavorite(course.id));
+      setCompleted(isCompleted(course.id));
     }
   }, [course]);
 
@@ -183,8 +189,8 @@ const CourseDetailPage = () => {
               {course.description}
             </p>
 
-            {/* FAVORITE BUTTON */}
-            <div className="mt-3 w-fit">
+            {/* FAVORITE & COMPLETED BUTTONS */}
+            <div className="mt-3 flex items-center gap-3">
               <div
                 className={`p-[1px] rounded-lg ${favorited ? "bg-gradient-to-r from-[#A716A7] to-[#7B61FF]" : "bg-border"
                   }`}
@@ -203,6 +209,72 @@ const CourseDetailPage = () => {
 
                   <span className={favorited ? "text-primary" : "text-foreground"}>
                     {favorited ? "Saved" : "Add to My Courses"}
+                  </span>
+                </button>
+              </div>
+
+              {/* COMPLETED CHECKBOX */}
+              <div
+                className={`p-[1px] rounded-lg transition-all duration-200 ${
+                  completed
+                    ? "bg-gradient-to-r from-emerald-400 to-green-500"
+                    : "bg-border"
+                }`}
+              >
+                <button
+                  onClick={async () => {
+                    const coreSkill = course.skills?.[0] ?? "";
+                    if (completed) {
+                      unmarkCompleted(course.id);
+                      removeLearnedSkill(course.id);
+                      removeLearnedCareer(course.id);
+                      if (user?.uid) {
+                        try {
+                          await userService.removeCompletedCourse(user.uid, {
+                            name: course.title,
+                            platform: course.platform,
+                          });
+                        } catch (e) {
+                          console.warn("Could not remove completed course from Firestore:", e);
+                        }
+                      }
+                    } else {
+                      markCompleted(course.id);
+                      addLearnedSkill(course.id, coreSkill);
+                      addLearnedCareer(course.id, deriveCareer(coreSkill, course.title));
+                      if (user?.uid) {
+                        try {
+                          await userService.addCompletedCourse(user.uid, {
+                            name: course.title,
+                            platform: course.platform,
+                          });
+                        } catch (e) {
+                          console.warn("Could not save completed course to Firestore:", e);
+                        }
+                      }
+                    }
+                    setCompleted(!completed);
+                  }}
+                  className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-all duration-200 ${
+                    completed
+                      ? "bg-emerald-50"
+                      : "bg-white"
+                  }`}
+                >
+                  <CheckCircle2
+                    size={16}
+                    className={`transition-all duration-200 ${
+                      completed
+                        ? "fill-emerald-500 text-white"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                  <span
+                    className={`transition-all duration-200 ${
+                      completed ? "text-emerald-700 font-medium" : "text-foreground"
+                    }`}
+                  >
+                    {completed ? "Completed" : "Completed"}
                   </span>
                 </button>
               </div>

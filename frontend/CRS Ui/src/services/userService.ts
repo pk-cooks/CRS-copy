@@ -11,8 +11,10 @@ export interface UserProfile {
     interests?: string[];
     skillLevel?: string;
     myCourses?: SavedCourse[];
+    completedCourses?: SavedCourse[];
     history?: string[];
     hasFinishedOnboarding?: boolean;
+    hasfinishedonboarding?: boolean;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -81,6 +83,30 @@ export const userService = {
         const docRef = doc(db, USERS_COLLECTION, uid);
         await updateDoc(docRef, {
             myCourses: arrayRemove(course),
+            updatedAt: new Date().toISOString(),
+        });
+    },
+
+    /**
+     * Add a course to the user's completedCourses array in Firestore.
+     */
+    async addCompletedCourse(uid: string, course: SavedCourse): Promise<void> {
+        if (!db) throw new Error("Firestore is not initialized");
+        const docRef = doc(db, USERS_COLLECTION, uid);
+        await setDoc(docRef, {
+            completedCourses: arrayUnion(course),
+            updatedAt: new Date().toISOString(),
+        }, { merge: true });
+    },
+
+    /**
+     * Remove a course from the user's completedCourses array in Firestore.
+     */
+    async removeCompletedCourse(uid: string, course: SavedCourse): Promise<void> {
+        if (!db) throw new Error("Firestore is not initialized");
+        const docRef = doc(db, USERS_COLLECTION, uid);
+        await updateDoc(docRef, {
+            completedCourses: arrayRemove(course),
             updatedAt: new Date().toISOString(),
         });
     },

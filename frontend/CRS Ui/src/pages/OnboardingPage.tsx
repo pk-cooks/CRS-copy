@@ -37,6 +37,18 @@ const OnboardingPage = () => {
     if (!user) navigate("/login");
   }, [user, navigate]);
 
+  // Redirect if user has already completed onboarding
+  useEffect(() => {
+    if (user?.hasDoneOnboarding) navigate("/my-courses", { replace: true });
+  }, [user, navigate]);
+
+  // Jump to a specific step if navigated with startStep (e.g. from Results page)
+  useEffect(() => {
+    if (location.state?.startStep !== undefined) {
+      setStep(location.state.startStep);
+    }
+  }, [location.state]);
+
   // Restore interests from explore page
   useEffect(() => {
     if (location.state?.interests) {
@@ -93,6 +105,7 @@ const OnboardingPage = () => {
           interests,
           skillLevel: skill,
           hasFinishedOnboarding: true,
+          hasfinishedonboarding: true,
         });
       }
 

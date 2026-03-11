@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 from pydantic import BaseModel
+from typing import Optional
 import os
 
 app = FastAPI(title="CRS API", version="1.0.0")
@@ -26,11 +27,10 @@ try:
 
     if os.path.isfile(course_file):
         courses = pd.read_csv(course_file)
-
-    # remove hidden spaces in column names
+        # remove hidden spaces in column names  (FIX: was de-indented outside the if block)
         courses.columns = courses.columns.str.strip()
 
-        print("DATASET COLUMNS:", courses.columns)
+        print("DATASET COLUMNS:", courses.columns.tolist())
 
         # Rename difficulty column
         if "lvl of diff" in courses.columns:
@@ -80,7 +80,15 @@ def signup(data: SignUpRequest):
     if not email or not data.password.strip():
         raise HTTPException(status_code=400, detail="Email and password required")
     if email in users_db:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        # Return existing user info instead of error — needed for Firebase re-signup flow
+        u = users_db[email]
+        return {
+            "userid": u["userid"],
+            "email": email,
+            "name": u["name"],
+            "is_new_user": False,
+            "has_done_onboarding": u["has_done_onboarding"],
+        }
     userid = _next_userid
     _next_userid += 1
     users_db[email] = {
@@ -142,7 +150,7 @@ def get_courses():
 
 
 @app.get("/recommend")
-def recommend_courses(userid: int | None = None):
+def recommend_courses(userid: Optional[int] = None):
     try:
         if userid is None:
             if not user_profiles:
@@ -159,12 +167,28 @@ def recommend_courses(userid: int | None = None):
             return {"error": "Invalid interests format"}
         if courses.empty:
             return []
-        filtered = courses[courses["Sub-Category"].str.contains('|'.join(interested_fields), case=False, na=False)]
+
+        # FIX: Dynamically find the filter column instead of hardcoding "Sub-Category"
+        filter_col = next(
+            (col for col in ["Sub-Category", "sub-category", "subcategory", "Category", "category", "Title", "title"]
+             if col in courses.columns),
+            None
+        )
+        if filter_col is None:
+            return []
+
+        pattern = '|'.join(interested_fields)
+        filtered = courses[courses[filter_col].str.contains(pattern, case=False, na=False)]
         if filtered.empty:
             return []
-        filtered = filtered.sort_values(by="Rating", ascending=False)
+
+        if "Rating" in filtered.columns:
+            filtered = filtered.sort_values(by="Rating", ascending=False)
         filtered = filtered.head(12).copy()
-        filtered["level"] = filtered.get("lvl of diff", "Unknown")
+
+        # FIX: DataFrame has no .get() method — check column existence explicitly
+        if "level" not in filtered.columns:
+            filtered["level"] = filtered["lvl of diff"] if "lvl of diff" in filtered.columns else "Unknown"
 
         return filtered.to_dict(orient="records")
     except Exception as e:

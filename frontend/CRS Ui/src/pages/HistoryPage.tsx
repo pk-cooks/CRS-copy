@@ -6,6 +6,7 @@ import { allCourses, levelColor } from "@/data/courses";
 import { getCourseHistory, clearCourseHistory, addCourseToHistory } from "@/lib/courseHistory";
 import FavoriteHeart from "@/components/FavoriteHeart";
 import { useUser } from "@/context/UserContext";
+import CompletedBadge from "@/components/CompletedBadge";
 
 
 const HistoryPage = () => {
@@ -128,6 +129,7 @@ const HistoryPage = () => {
                     <div className="flex items-center gap-1">
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                       <span className="text-sm font-medium text-foreground">{course.rating}</span>
+                      <CompletedBadge courseId={course.id} />
                     </div>
                     <Button
                       variant="ghost"

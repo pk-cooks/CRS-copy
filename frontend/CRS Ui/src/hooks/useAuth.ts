@@ -66,9 +66,9 @@ export function useAuth() {
                 uid: firebaseUid,
                 userid: res.userid, email: res.email, name: res.name,
                 isNewUser: res.is_new_user,
-                hasDoneOnboarding: firestoreProfile?.hasFinishedOnboarding ?? res.has_done_onboarding,
+                hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding,
             });
-            return { isNewUser: res.is_new_user, hasDoneOnboarding: firestoreProfile?.hasFinishedOnboarding ?? res.has_done_onboarding };
+            return { isNewUser: res.is_new_user, hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding };
         } catch {
             try {
                 const res = await api.login(email, password);
@@ -77,9 +77,9 @@ export function useAuth() {
                     uid: firebaseUid,
                     userid: res.userid, email: res.email, name: res.name,
                     isNewUser: res.is_new_user,
-                    hasDoneOnboarding: firestoreProfile?.hasFinishedOnboarding ?? res.has_done_onboarding,
+                    hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding,
                 });
-                return { isNewUser: res.is_new_user, hasDoneOnboarding: firestoreProfile?.hasFinishedOnboarding ?? res.has_done_onboarding };
+                return { isNewUser: res.is_new_user, hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding };
             } catch {
                 setUser({ uid: firebaseUid, userid: 0, email, name, isNewUser: true, hasDoneOnboarding: false });
                 return { isNewUser: true, hasDoneOnboarding: false };
@@ -126,12 +126,15 @@ export function useAuth() {
                             uid: firebaseUid,
                             userid: res.userid, email: res.email, name: res.name,
                             isNewUser: res.is_new_user,
-                            hasDoneOnboarding: firestoreProfile?.hasFinishedOnboarding ?? res.has_done_onboarding,
+                            hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding,
                         });
-                        return { isNewUser: res.is_new_user, hasDoneOnboarding: firestoreProfile?.hasFinishedOnboarding ?? res.has_done_onboarding };
+                        return { isNewUser: res.is_new_user, hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding };
                     } catch {
-                        setUser({ uid: firebaseUid, userid: 0, email, name: "", isNewUser: false, hasDoneOnboarding: false });
-                        return { isNewUser: false, hasDoneOnboarding: false };
+                        // Backend call failed; try to read onboarding status from Firestore
+                        const firestoreProfile = await userService.getUserProfile(firebaseUid).catch(() => null);
+                        const hasDoneOnboarding = (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? false;
+                        setUser({ uid: firebaseUid, userid: 0, email, name: "", isNewUser: false, hasDoneOnboarding });
+                        return { isNewUser: false, hasDoneOnboarding };
                     }
                 } else {
                     return await backendLogin(email, password);
@@ -175,18 +178,18 @@ export function useAuth() {
                         uid: firebaseUid,
                         userid: res.userid, email: res.email, name: res.name,
                         isNewUser: res.is_new_user,
-                        hasDoneOnboarding: firestoreProfile?.hasFinishedOnboarding ?? res.has_done_onboarding,
+                        hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding,
                     });
-                    return { isNewUser: res.is_new_user, hasDoneOnboarding: firestoreProfile?.hasFinishedOnboarding ?? res.has_done_onboarding };
+                    return { isNewUser: res.is_new_user, hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding };
                 } else {
                     const res = await api.login(email, firebaseUser.uid);
                     setUser({
                         uid: firebaseUid,
                         userid: res.userid, email: res.email, name: res.name,
                         isNewUser: res.is_new_user,
-                        hasDoneOnboarding: firestoreProfile?.hasFinishedOnboarding ?? res.has_done_onboarding,
+                        hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding,
                     });
-                    return { isNewUser: res.is_new_user, hasDoneOnboarding: firestoreProfile?.hasFinishedOnboarding ?? res.has_done_onboarding };
+                    return { isNewUser: res.is_new_user, hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding };
                 }
             } catch {
                 setUser({ uid: firebaseUid, userid: 0, email, name, isNewUser, hasDoneOnboarding: false });
@@ -209,3 +212,4 @@ export function useAuth() {
         error,
     };
 }
+

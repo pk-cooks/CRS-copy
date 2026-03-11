@@ -4,6 +4,7 @@ import { ArrowLeft, Star, ExternalLink, Sparkles, Award, ChevronLeft, ChevronRig
 import { useUser } from "@/context/UserContext";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import type { NormalizedCourse } from "@/hooks/useRecommendations";
+import CompletedBadge from "@/components/CompletedBadge";
 
 const levelColor = (level: string) => {
   switch (level) {
@@ -99,7 +100,7 @@ const ResultsPage = () => {
         {!loading && error && (
           <div className="text-center py-20">
             <p className="text-muted-foreground mb-4">{error}</p>
-            <Button variant="gradient" onClick={() => navigate("/onboarding")}>
+            <Button variant="gradient" onClick={() => navigate("/onboarding", { state: { startStep: 1 } })}>
               Update Your Interests
             </Button>
           </div>
@@ -113,7 +114,7 @@ const ResultsPage = () => {
             <p className="text-muted-foreground mb-6">
               We couldn't find courses matching your interests right now. Try updating your interests.
             </p>
-            <Button variant="gradient" onClick={() => navigate("/onboarding")}>
+            <Button variant="gradient" onClick={() => navigate("/onboarding", { state: { startStep: 1 } })}>
               Update Your Interests
             </Button>
           </div>
@@ -143,6 +144,7 @@ const ResultsPage = () => {
                   <div className="flex items-center gap-1">
                     <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                     <span className="text-sm font-medium text-foreground">{course.rating}</span>
+                    <CompletedBadge courseId={course.id} />
                   </div>
                   <Button variant="ghost" size="sm" className="text-primary hover:text-primary" onClick={() => navigate(`/course/${course.id}`)}>
                     View <ExternalLink className="ml-1 h-3 w-3" />
@@ -177,6 +179,7 @@ const ResultsPage = () => {
                     <div className="flex items-center gap-1">
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                       <span className="text-sm font-medium text-foreground">{course.rating}</span>
+                      <CompletedBadge courseId={course.id} />
                     </div>
                     <Button variant="ghost" size="sm" className="text-primary hover:text-primary" onClick={() => navigate(`/course/${course.id}`)}>
                       View <ExternalLink className="ml-1 h-3 w-3" />

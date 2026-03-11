@@ -19,10 +19,12 @@ const LoginPage = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
 
   const routeAfterAuth = (result: { isNewUser: boolean; hasDoneOnboarding: boolean }) => {
-    if (result.isNewUser || !result.hasDoneOnboarding) {
-      navigate("/onboarding");
+    // If the user has finished onboarding (regardless of isNewUser flag), go to My Courses.
+    // Only redirect to onboarding if they truly haven't completed it yet.
+    if (result.hasDoneOnboarding) {
+      navigate("/my-courses");
     } else {
-      navigate("/dashboard");
+      navigate("/onboarding");
     }
   };
 

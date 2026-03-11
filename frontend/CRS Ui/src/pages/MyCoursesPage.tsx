@@ -8,6 +8,7 @@ import { getFavorites } from "@/lib/favorites";
 import type { StaticCourse } from "@/data/courses";
 import { useUser } from "@/context/UserContext";
 import { useRecommendations } from "@/hooks/useRecommendations";
+import CompletedBadge from "@/components/CompletedBadge";
 
 const MyCoursesPage = () => {
   const navigate = useNavigate();
@@ -238,6 +239,7 @@ const MyCoursesPage = () => {
                     <span className="text-sm font-medium text-foreground">
                       {course.rating}
                     </span>
+                    <CompletedBadge courseId={course.id} />
                   </div>
 
                   <Button
