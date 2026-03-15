@@ -35,7 +35,7 @@ const LoginPage = () => {
       return;
     }
     try {
-      const result = await login(email, password);
+      const result = await login(email, password, remember);
       routeAfterAuth(result);
     } catch (err) {
       toast({
@@ -165,7 +165,11 @@ const LoginPage = () => {
                     />
                     <span className="text-sm text-muted-foreground">Remember me</span>
                   </label>
-                  <button type="button" className="text-sm text-primary hover:underline">
+                  <button
+                    type="button"
+                    className="text-sm text-primary hover:underline"
+                    onClick={() => navigate("/forgot-password")}
+                  >
                     Forgot Password?
                   </button>
                 </div>

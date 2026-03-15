@@ -112,12 +112,12 @@ export function useAuth() {
     );
 
     const loginFn = useCallback(
-        async (email: string, password: string) => {
+        async (email: string, password: string, remember = false) => {
             setLoading(true);
             setError(null);
             try {
                 if (isFirebaseConfigured) {
-                    const fbUser = await loginWithEmail(email, password);
+                    const fbUser = await loginWithEmail(email, password, remember);
                     const firebaseUid = fbUser.uid;
                     try {
                         const res = await api.login(email, password);

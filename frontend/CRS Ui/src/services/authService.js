@@ -5,6 +5,9 @@ import {
   signInWithPopup,
   signOut,
   updateProfile,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/config/firebase";
 
@@ -32,9 +35,13 @@ export async function registerWithEmail(email, password, displayName = "") {
 
 /**
  * Sign in an existing user with email and password.
+ * @param {boolean} remember - If true use localStorage persistence (survives restarts).
+ *                             If false use session persistence (clears when tab closes).
  */
-export async function loginWithEmail(email, password) {
+export async function loginWithEmail(email, password, remember = false) {
   const firebaseAuth = ensureAuth();
+  // Set persistence BEFORE signing in
+  await setPersistence(firebaseAuth, remember ? browserLocalPersistence : browserSessionPersistence);
   const credential = await signInWithEmailAndPassword(firebaseAuth, email, password);
   return credential.user;
 }

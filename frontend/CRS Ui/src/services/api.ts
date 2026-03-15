@@ -104,4 +104,25 @@ export function getProfile(userid: number) {
   return request<Record<string, unknown>>(`/profile/${userid}`);
 }
 
+// ── Forgot Password / OTP ─────────────────────────────────────────────
 
+export function requestOtp(email: string) {
+  return request<{ message: string; email: string }>("/auth/forgot-password/request-otp", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function verifyOtp(email: string, otp: string) {
+  return request<{ message: string }>("/auth/forgot-password/verify-otp", {
+    method: "POST",
+    body: JSON.stringify({ email, otp }),
+  });
+}
+
+export function resetPassword(email: string, otp: string, new_password: string) {
+  return request<{ message: string }>("/auth/forgot-password/reset", {
+    method: "POST",
+    body: JSON.stringify({ email, otp, new_password }),
+  });
+}
