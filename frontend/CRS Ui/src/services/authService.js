@@ -5,6 +5,7 @@ import {
   signInWithPopup,
   signOut,
   updateProfile,
+  updatePassword,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
@@ -70,3 +71,15 @@ export function logoutUser() {
   if (!isFirebaseConfigured || !auth) return Promise.resolve();
   return signOut(auth);
 }
+
+/**
+ * Update the password of a currently signed-in Firebase user.
+ * Used after a backend password reset to sync the new password into Firebase Auth.
+ */
+export async function updateFirebaseUserPassword(newPassword) {
+  const firebaseAuth = ensureAuth();
+  if (firebaseAuth.currentUser) {
+    await updatePassword(firebaseAuth.currentUser, newPassword);
+  }
+}
+

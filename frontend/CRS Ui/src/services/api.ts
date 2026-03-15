@@ -126,3 +126,11 @@ export function resetPassword(email: string, otp: string, new_password: string) 
     body: JSON.stringify({ email, otp, new_password }),
   });
 }
+
+export function syncFirebasePassword(email: string, new_password: string) {
+  return request<{ message: string }>("/auth/sync-firebase-password", {
+    method: "POST",
+    body: JSON.stringify({ email, new_password }),
+  });
+}
+

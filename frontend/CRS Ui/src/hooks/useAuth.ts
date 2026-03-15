@@ -117,24 +117,55 @@ export function useAuth() {
             setError(null);
             try {
                 if (isFirebaseConfigured) {
-                    const fbUser = await loginWithEmail(email, password, remember);
-                    const firebaseUid = fbUser.uid;
                     try {
-                        const res = await api.login(email, password);
-                        const firestoreProfile = await userService.getUserProfile(firebaseUid).catch(() => null);
-                        setUser({
-                            uid: firebaseUid,
-                            userid: res.userid, email: res.email, name: res.name,
-                            isNewUser: res.is_new_user,
-                            hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding,
-                        });
-                        return { isNewUser: res.is_new_user, hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding };
-                    } catch {
-                        // Backend call failed; try to read onboarding status from Firestore
-                        const firestoreProfile = await userService.getUserProfile(firebaseUid).catch(() => null);
-                        const hasDoneOnboarding = (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? false;
-                        setUser({ uid: firebaseUid, userid: 0, email, name: "", isNewUser: false, hasDoneOnboarding });
-                        return { isNewUser: false, hasDoneOnboarding };
+                        // Try Firebase Auth first
+                        const fbUser = await loginWithEmail(email, password, remember);
+                        const firebaseUid = fbUser.uid;
+                        try {
+                            const res = await api.login(email, password);
+                            const firestoreProfile = await userService.getUserProfile(firebaseUid).catch(() => null);
+                            setUser({
+                                uid: firebaseUid,
+                                userid: res.userid, email: res.email, name: res.name,
+                                isNewUser: res.is_new_user,
+                                hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding,
+                            });
+                            return { isNewUser: res.is_new_user, hasDoneOnboarding: (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? res.has_done_onboarding };
+                        } catch {
+                            // Backend call failed; try to read onboarding status from Firestore
+                            const firestoreProfile = await userService.getUserProfile(firebaseUid).catch(() => null);
+                            const hasDoneOnboarding = (firestoreProfile?.hasFinishedOnboarding ?? firestoreProfile?.hasfinishedonboarding) ?? false;
+                            setUser({ uid: firebaseUid, userid: 0, email, name: "", isNewUser: false, hasDoneOnboarding });
+                            return { isNewUser: false, hasDoneOnboarding };
+                        }
+                    } catch (firebaseErr) {
+                        // Firebase Auth failed — password may have been reset via backend OTP flow.
+                        // Fall back to backend-only login.
+                        console.warn("Firebase login failed, trying backend-only login:", firebaseErr);
+                        try {
+                            const res = await api.login(email, password);
+                            // Backend login succeeded — password was reset via OTP but Firebase Auth
+                            // still has the old password. Also trigger backend to sync the password
+                            // to Firebase via the REST API.
+                            try {
+                                await api.syncFirebasePassword(email, password);
+                            } catch (syncErr) {
+                                console.warn("Could not sync password to Firebase:", syncErr);
+                            }
+                            const userData = {
+                                uid: "",
+                                userid: res.userid,
+                                email: res.email,
+                                name: res.name,
+                                isNewUser: res.is_new_user,
+                                hasDoneOnboarding: res.has_done_onboarding,
+                            };
+                            setUser(userData);
+                            return { isNewUser: res.is_new_user, hasDoneOnboarding: res.has_done_onboarding };
+                        } catch {
+                            // Both Firebase and backend failed — truly invalid credentials
+                            throw firebaseErr;
+                        }
                     }
                 } else {
                     return await backendLogin(email, password);
@@ -149,6 +180,7 @@ export function useAuth() {
         },
         [setUser]
     );
+
 
     const googleLoginFn = useCallback(async () => {
         setLoading(true);

@@ -6,6 +6,7 @@ from typing import Optional
 import os
 import random
 import time
+import httpx
 
 app = FastAPI(title="CRS API", version="1.0.0")
 
@@ -21,22 +22,12 @@ app.add_middleware(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 
-# ── Firebase Admin SDK (optional – only if serviceAccountKey.json is present) ──
-_firebase_admin_available = False
-try:
-    import firebase_admin
-    from firebase_admin import credentials, auth as firebase_auth
-
-    service_account_path = os.path.join(BASE_DIR, "serviceAccountKey.json")
-    if os.path.isfile(service_account_path):
-        _cred = credentials.Certificate(service_account_path)
-        firebase_admin.initialize_app(_cred)
-        _firebase_admin_available = True
-        print("✅ Firebase Admin SDK initialized – passwords will be synced to Firebase Auth.")
-    else:
-        print("⚠️  No serviceAccountKey.json found – password resets will only update the local in-memory DB.")
-except ImportError:
-    print("⚠️  firebase-admin not installed – password resets will only update the local in-memory DB.")
+# ── Firebase Web API Key (for REST Identity Toolkit calls) ──
+FIREBASE_API_KEY = os.environ.get("FIREBASE_API_KEY", "AIzaSyBjkfbX-2lswc-wfJNr6PwQiTCHBGqxZyQ")
+if FIREBASE_API_KEY:
+    print("✅ Firebase API Key configured – passwords will be synced to Firebase Auth via REST API.")
+else:
+    print("⚠️  No FIREBASE_API_KEY set – password resets will only update the local in-memory DB.")
 
 # Load data only if files exist (dataset can be added later)
 courses = pd.DataFrame()
@@ -100,6 +91,11 @@ class OtpVerifyModel(BaseModel):
 class ResetPasswordModel(BaseModel):
     email: str
     otp: str
+    new_password: str
+
+
+class SyncFirebasePasswordModel(BaseModel):
+    email: str
     new_password: str
 
 
@@ -225,16 +221,41 @@ def reset_password(data: ResetPasswordModel):
         del _otp_store[email]
         raise HTTPException(status_code=400, detail="OTP session expired. Please request a new OTP")
 
+    # Grab old password before overwriting (needed to sign in to Firebase)
+    old_password = users_db.get(email, {}).get("password")
+
     # Update local db
     if email in users_db:
         users_db[email]["password"] = new_password
 
-    # Update Firebase Auth if admin SDK is available
-    if _firebase_admin_available:
+    # Update Firebase Auth via REST Identity Toolkit API
+    if FIREBASE_API_KEY and old_password:
         try:
-            fb_user = firebase_auth.get_user_by_email(email)
-            firebase_auth.update_user(fb_user.uid, password=new_password)
-            print(f"✅ Firebase Auth password updated for {email}")
+            # Step 1: Sign in with old password to get an idToken
+            sign_in_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
+            sign_in_resp = httpx.post(sign_in_url, json={
+                "email": email,
+                "password": old_password,
+                "returnSecureToken": True,
+            }, timeout=10)
+
+            if sign_in_resp.status_code == 200:
+                id_token = sign_in_resp.json().get("idToken")
+
+                # Step 2: Use the idToken to update the password
+                update_url = f"https://identitytoolkit.googleapis.com/v1/accounts:update?key={FIREBASE_API_KEY}"
+                update_resp = httpx.post(update_url, json={
+                    "idToken": id_token,
+                    "password": new_password,
+                    "returnSecureToken": True,
+                }, timeout=10)
+
+                if update_resp.status_code == 200:
+                    print(f"✅ Firebase Auth password updated for {email}")
+                else:
+                    print(f"⚠️  Could not update Firebase Auth password: {update_resp.text}")
+            else:
+                print(f"⚠️  Could not sign in to Firebase to update password: {sign_in_resp.text}")
         except Exception as e:
             print(f"⚠️  Could not update Firebase Auth password: {e}")
 
